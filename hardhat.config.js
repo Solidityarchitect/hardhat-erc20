@@ -6,9 +6,9 @@ require("hardhat-gas-reporter")
 require("hardhat-contract-sizer")
 require("dotenv").config()
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
+const { ProxyAgent, setGlobalDispatcher } = require("undici")
+const proxyAgent = new ProxyAgent("http://127.0.0.1:7890")
+setGlobalDispatcher(proxyAgent)
 
 const MAINNET_RPC_URL =
   process.env.MAINNET_RPC_URL ||
@@ -29,7 +29,6 @@ const ETHERSCAN_API_KEY =
   process.env.ETHERSCAN_API_KEY || "Your etherscan API key"
 const POLYGONSCAN_API_KEY =
   process.env.POLYGONSCAN_API_KEY || "Your polygonscan API key"
-const REPORT_GAS = process.env.REPORT_GAS.toLowerCase() === "true" || false
 
 module.exports = {
   defaultNetwork: "hardhat",
@@ -46,11 +45,10 @@ module.exports = {
     },
     sepolia: {
       url: SEPOLIA_RPC_URL,
-      accounts: PRIVATE_KEY !== undefined ? [PRIVATE_KEY] : [],
+      accounts: [PRIVATE_KEY],
       //accounts: {
       //     mnemonic: MNEMONIC,
       // },
-      saveDeployments: true,
       chainId: 11155111,
       blockConfirmation: 6,
     },
@@ -70,19 +68,27 @@ module.exports = {
       chainId: 137,
     },
   },
-  etherscan: {
-    // npx hardhat verify --network <NETWORK> <CONTRACT_ADDRESS> <CONSTRUCTOR_PARAMETERS>
-    apiKey: {
-      sepolia: ETHERSCAN_API_KEY,
-      polygon: POLYGONSCAN_API_KEY,
-    },
-  },
   gasReporter: {
-    enabled: REPORT_GAS,
+    enabled: false,
     currency: "USD",
     outputFile: "gas-report.txt",
     noColors: true,
     // coinmarketcap: process.env.COINMARKETCAP_API_KEY,
+  },
+  etherscan: {
+    apiKey: {
+      sepolia: ETHERSCAN_API_KEY,
+    },
+    customChains: [
+      {
+        network: "sepolia",
+        chainId: 11155111,
+        urls: {
+          apiURL: SEPOLIA_RPC_URL,
+          browserURL: "https://sepolia.etherscan.io/",
+        },
+      },
+    ],
   },
   contractSizer: {
     runOnCompile: false,
